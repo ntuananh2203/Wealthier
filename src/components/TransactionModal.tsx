@@ -170,8 +170,8 @@ export function TransactionModal({
           <input
             id="tx-amount-input"
             type="number"
-            min={1000}
-            step={1000}
+            min={1}
+            step={1}
             placeholder="150000"
             value={amount}
             onChange={(e) => {
