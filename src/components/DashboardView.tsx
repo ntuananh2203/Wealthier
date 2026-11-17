@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { syncPullFromCloud } from '../services/cloudSync'; // <-- THÊM DÒNG NÀY
 import {
   AlertTriangle,
   ArrowDownLeft,
@@ -70,6 +71,17 @@ export function DashboardView({
   const [cashModalOpen, setCashModalOpen] = useState(false);
   const [cashInput, setCashInput] = useState(String(summary.totalCash));
   const [cashError, setCashError] = useState('');
+
+  useEffect(() => {
+    const unsubscribe = syncPullFromCloud("transactions", (cloudData) => {
+      // Gọi cập nhật lại dữ liệu giao dịch từ mây về app
+      // (Nếu component cha của bạn truyền hàm cập nhật, hoặc nếu bạn dùng trực tiếp state truyền vào)
+      if (data && typeof (data as any).setTransactions === 'function') {
+        (data as any).setTransactions(cloudData);
+      }
+    });
+    return () => unsubscribe();
+  }, [data]);
 
   const isDark = theme === 'dark';
   const gridStroke = isDark ? '#1e293b' : '#e2e8f0';
