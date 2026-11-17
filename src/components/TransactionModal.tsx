@@ -3,7 +3,6 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../data/seedData';
 import { Transaction, TransactionType } from '../types/finance';
 import { getTodayISO } from '../utils/financeMath';
 import { Modal } from './Modal';
-
 interface TransactionModalProps {
   open: boolean;
   editingTransaction: Transaction | null;
@@ -224,4 +223,5 @@ export function TransactionModal({
       </form>
     </Modal>
   );
+  
 }
