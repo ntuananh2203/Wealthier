@@ -3,6 +3,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../data/seedData';
 import { Transaction, TransactionType } from '../types/finance';
 import { getTodayISO } from '../utils/financeMath';
 import { Modal } from './Modal';
+import { syncPushToCloud } from '../services/cloudSync';
 interface TransactionModalProps {
   open: boolean;
   editingTransaction: Transaction | null;
@@ -53,31 +54,39 @@ export function TransactionModal({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const numericAmount = Number(amount);
-    if (!date) {
-      setError('Vui lòng chọn ngày giao dịch.');
-      return;
-    }
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setError('Số tiền phải lớn hơn 0.');
-      return;
-    }
-    if (!description.trim()) {
-      setError('Vui lòng nhập nội dung ghi chú cho giao dịch.');
-      return;
-    }
+      e.preventDefault();
+      const numericAmount = Number(amount);
+      if (!date) {
+        setError('Vui lòng chọn ngày giao dịch.');
+        return;
+      }
+      if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+        setError('Số tiền phải lớn hơn 0.');
+        return;
+      }
+      if (!description.trim()) {
+        setError('Vui lòng nhập nội dung ghi chú cho giao dịch.');
+        return;
+      }
 
-    onSave({
-      id: editingTransaction?.id ?? `tx-${Date.now()}`,
-      date,
-      type,
-      category,
-      description: description.trim(),
-      amount: Math.round(numericAmount),
-    });
-    onClose();
-  };
+      // 1. Tạo sẵn object dữ liệu giao dịch
+      const newTransaction = {
+        id: editingTransaction?.id ?? `tx-${Date.now()}`,
+        date,
+        type,
+        category,
+        description: description.trim(),
+        amount: Math.round(numericAmount),
+      };
+
+      // 2. Lưu vào state gốc của app (như cũ)
+      onSave(newTransaction);
+
+      // 3. Đẩy đồng thời lên mây thông qua file cloudSync
+      syncPushToCloud("transactions", newTransaction);
+
+      onClose();
+    };
 
   return (
     <Modal
