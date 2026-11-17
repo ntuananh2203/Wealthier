@@ -480,8 +480,8 @@ export function DebtsView({
               <input
                 id="debt-amount-input"
                 type="number"
-                min={1000}
-                step={10000}
+                min={1}
+                step={1}
                 placeholder="5000000"
                 value={amount}
                 onChange={(e) => {
