@@ -682,8 +682,8 @@ export function PortfolioView({
               <input
                 id="stock-cost-input"
                 type="number"
-                min={100}
-                step={50}
+                min={1}
+                step={1}
                 placeholder="26500"
                 value={stockAvgCost}
                 onChange={(e) => {
@@ -704,8 +704,8 @@ export function PortfolioView({
               <input
                 id="stock-price-input"
                 type="number"
-                min={100}
-                step={50}
+                min={1}
+                step={1}
                 placeholder="27300"
                 value={stockCurrentPrice}
                 onChange={(e) => {
@@ -831,8 +831,8 @@ export function PortfolioView({
               <input
                 id="gold-buy-input"
                 type="number"
-                min={10000}
-                step={10000}
+                min={1}
+                step={1}
                 placeholder="8300000"
                 value={goldBuyPrice}
                 onChange={(e) => {
@@ -853,8 +853,8 @@ export function PortfolioView({
               <input
                 id="gold-market-input"
                 type="number"
-                min={10000}
-                step={10000}
+                min={1}
+                step={1}
                 placeholder="8480000"
                 value={goldMarketPrice}
                 onChange={(e) => {
