@@ -1,28 +1,25 @@
-// src/services/financeSync.ts
-import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+// Bổ sung trong file src/services/financeSync.ts
+import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 
-// 1. Hàm đẩy dữ liệu mới lên Cloud Firebase từ bất kỳ thiết bị nào
-export async function addDataToCloud(collectionName: string, data: any) {
+// Hàm đồng bộ chung cho các danh mục (thu-chi, đầu tư cổ phiếu, vàng)
+export async function syncDataToCloud(category: string, data: any) {
   try {
-    await addDoc(collection(db, collectionName), {
+    await addDoc(collection(db, category), {
       ...data,
-      createdAt: new Date().toISOString()
+      updatedAt: new Date().toISOString()
     });
   } catch (error) {
-    console.error("Lỗi khi đồng bộ lên cloud: ", error);
+    console.error(`Lỗi đồng bộ ${category} lên cloud:`, error);
   }
 }
 
-// 2. Hàm lắng nghe thay đổi thời gian thực cho mọi thiết bị
-export function subscribeToData(collectionName: string, callback: (items: any[]) => void) {
-  const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
-  
-  // onSnapshot sẽ tự động kích hoạt ngay lập tức khi có bất kỳ thiết bị nào thay đổi dữ liệu
-  return onSnapshot(q, (querySnapshot) => {
+export function subscribeToCategory(category: string, callback: (items: any[]) => void) {
+  const q = query(collection(db, category), orderBy("updatedAt", "desc"));
+  return onSnapshot(q, (snapshot) => {
     const list: any[] = [];
-    querySnapshot.forEach((doc) => {
-      list.push({ id: doc.id, ...doc.data() });
+    snapshot.forEach((docItem) => {
+      list.push({ id: docItem.id, ...docItem.data() });
     });
     callback(list);
   });
