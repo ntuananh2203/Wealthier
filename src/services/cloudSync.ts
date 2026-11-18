@@ -1,4 +1,4 @@
-import { collection, addDoc, onSnapshot, query, orderBy, getDocs } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
 // 1. Hàm đẩy dữ liệu lên mây, chờ 30 giây rồi tự động kéo dữ liệu về
@@ -44,4 +44,13 @@ export function syncPullFromCloud(collectionName: string, onDataUpdate: (data: a
     });
     onDataUpdate(list);
   });
+}
+
+export async function deleteFromCloud(collectionName: string, docId: string) {
+  try {
+    await deleteDoc(doc(db, collectionName, docId));
+    console.log(`Đã xóa thành công bản ghi ${docId} trên Firebase!`);
+  } catch (error) {
+    console.error(`Lỗi khi xóa bản ghi ${docId}:`, error);
+  }
 }

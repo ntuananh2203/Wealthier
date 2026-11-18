@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { deleteFromCloud } from './services/cloudSync'; 
 import { DashboardView } from './components/DashboardView';
 import { DebtsView } from './components/DebtsView';
 import { Header } from './components/Header';
@@ -117,11 +118,12 @@ export default function App() {
     });
   };
 
-  const handleDeleteStock = (id: string) => {
+  const handleDeleteStock = async (id: string) => {
     setData((prev) => ({
       ...prev,
       stocks: prev.stocks.filter((s) => s.id !== id),
     }));
+    await deleteFromCloud("stocks", id);
   };
 
   const handleSaveGold = (item: GoldHolding) => {
@@ -154,12 +156,18 @@ export default function App() {
       };
     });
   };
+// Hàm xóa transaction
+//
 
-  const handleDeleteTransaction = (id: string) => {
+  const handleDeleteTransaction = async (id: string) => {
+    // 1. Cập nhật state cục bộ để giao diện mất đi ngay lập tức
     setData((prev) => ({
       ...prev,
       transactions: prev.transactions.filter((t) => t.id !== id),
     }));
+
+    // 2. Gọi lệnh xóa vĩnh viễn trên Firebase Cloud
+    await deleteFromCloud("transactions", id);
   };
 
   const handleSaveDebt = (debt: DebtItem) => {
@@ -174,11 +182,12 @@ export default function App() {
     });
   };
 
-  const handleDeleteDebt = (id: string) => {
+  const handleDeleteDebt = async (id: string) => {
     setData((prev) => ({
       ...prev,
       debts: prev.debts.filter((d) => d.id !== id),
     }));
+    await deleteFromCloud("debts", id);
   };
 
   const handleToggleDebtStatus = (id: string) => {

@@ -72,23 +72,6 @@ export function DashboardView({
   const [cashInput, setCashInput] = useState(String(summary.totalCash));
   const [cashError, setCashError] = useState('');
 
-  useEffect(() => {
-    // Lắng nghe dữ liệu thời gian thực từ Firestore collection "transactions"
-    const unsubscribe = syncPullFromCloud("transactions", (cloudData) => {
-      // Cập nhật lại mảng transactions trong object dữ liệu của app ngay khi có thay đổi trên mây
-      if (data) {
-        data.transactions = cloudData;
-        
-        // Nếu component cha có truyền hàm cập nhật state riêng thì gọi luôn ở đây (nếu có)
-        if (typeof (data as any).setTransactions === 'function') {
-          (data as any).setTransactions(cloudData);
-        }
-      }
-    });
-
-    // Dọn dẹp listener khi component unmount
-    return () => unsubscribe();
-  }, [data]);
 
   const isDark = theme === 'dark';
   const gridStroke = isDark ? '#1e293b' : '#e2e8f0';
