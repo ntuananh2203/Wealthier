@@ -1,4 +1,4 @@
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "../firebase";
 
 // 1. Hàm đẩy dữ liệu lên mây, chờ 30 giây rồi tự động kéo dữ liệu về
@@ -46,11 +46,25 @@ export function syncPullFromCloud(collectionName: string, onDataUpdate: (data: a
   });
 }
 
-export async function deleteFromCloud(collectionName: string, docId: string) {
+export async function deleteFromCloud(collectionName: string, customId: string) {
   try {
-    await deleteDoc(doc(db, collectionName, docId));
-    console.log(`Đã xóa thành công bản ghi ${docId} trên Firebase!`);
+    // 1. Truy vấn tìm document có trường `id` khớp với customId của bạn
+    const q = query(collection(db, collectionName), where("id", "==", customId));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      console.warn(`Không tìm thấy bản ghi nào trên Firebase có id là: ${customId}`);
+      return;
+    }
+
+    // 2. Lặp qua các document tìm được (thường chỉ có 1) và lấy Document ID thật của Firebase để xóa
+    const deletePromises = snapshot.docs.map((documentSnap) => {
+      return deleteDoc(doc(db, collectionName, documentSnap.id));
+    });
+
+    await Promise.all(deletePromises);
+    console.log(`Đã xóa thành công bản ghi có customId ${customId} trên Firebase!`);
   } catch (error) {
-    console.error(`Lỗi khi xóa bản ghi ${docId}:`, error);
+    console.error(`Lỗi khi xóa bản ghi ${customId}:`, error);
   }
 }
