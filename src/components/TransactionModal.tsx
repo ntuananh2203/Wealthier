@@ -82,9 +82,12 @@ export function TransactionModal({
       // 2. Lưu vào state gốc của app (như cũ)
       onSave(newTransaction);
 
-      // 3. Đẩy đồng thời lên mây thông qua file cloudSync
-      syncPushToCloud("transactions", newTransaction);
-
+      // 3. Đẩy lên mây, sau 30 giây tự động kéo dữ liệu mới nhất về
+      syncPushToCloud("transactions", newTransaction, (newList) => {
+        // Nếu component cha của bạn có truyền hàm cập nhật state hoặc bạn muốn xử lý danh sách mới sau 30s tại đây:
+        // (Ví dụ: setTransactions(newList); nếu có state transactions trong phạm vi này)
+        console.log("Đã tự động nhận danh sách mới sau 30s:", newList);
+      });
       onClose();
     };
 
