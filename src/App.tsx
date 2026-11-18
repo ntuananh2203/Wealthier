@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { deleteFromCloud } from './services/cloudSync'; 
 import { DashboardView } from './components/DashboardView';
 import { DebtsView } from './components/DebtsView';
 import { Header } from './components/Header';
@@ -8,6 +7,7 @@ import { Sidebar } from './components/Sidebar';
 import { TransactionModal } from './components/TransactionModal';
 import { TransactionsView } from './components/TransactionsView';
 import { syncMarketPrices } from './services/marketPrices';
+import { syncPullFromCloud, deleteFromCloud } from './services/cloudSync';
 import {
   DebtItem,
   FinanceData,
@@ -44,7 +44,17 @@ export default function App() {
   useEffect(() => {
     latestDataRef.current = data;
   }, [data]);
+  
+  useEffect(() => {
+    const unsubscribe = syncPullFromCloud("transactions", (cloudTransactions) => {
+      setData((prev) => ({
+        ...prev,
+        transactions: cloudTransactions,
+      }));
+    });
 
+    return () => unsubscribe();
+  }, []);
   // Sync theme class on <html>
   useEffect(() => {
     const root = document.documentElement;

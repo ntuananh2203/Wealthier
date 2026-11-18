@@ -1,17 +1,18 @@
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, where } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
-// 1. Hàm đẩy dữ liệu lên mây, chờ 30 giây rồi tự động kéo dữ liệu về
+// 1. Đẩy lên mây và tự động gắn ID chuẩn của Firebase vào payload
 export async function syncPushToCloud(collectionName: string, payload: any, onPulledAfterDelay?: (updatedList: any[]) => void) {
   try {
-    // Đẩy dữ liệu lên Firestore trước
+    // Loại bỏ id tạm nếu có để Firebase tự cấp Document ID thật
+    const { id, ...restPayload } = payload;
+    
     await addDoc(collection(db, collectionName), {
-      ...payload,
+      ...restPayload,
       syncedAt: new Date().toISOString()
     });
     console.log("Đã đẩy lên mây thành công!");
 
-    // Chờ 30 giây (30000ms) để dữ liệu trên mây đồng bộ ổn định rồi kéo về
     if (onPulledAfterDelay) {
       setTimeout(async () => {
         try {
@@ -19,52 +20,39 @@ export async function syncPushToCloud(collectionName: string, payload: any, onPu
           const snapshot = await getDocs(q);
           const list: any[] = [];
           snapshot.forEach((doc) => {
+            // Lấy trực tiếp id chuẩn của Firebase gán vào item
             list.push({ id: doc.id, ...doc.data() });
           });
-          
           onPulledAfterDelay(list);
-          console.log("Đã tự động kéo dữ liệu mới về sau 30s!");
         } catch (err) {
-          console.error("Lỗi khi kéo dữ liệu sau thời gian chờ:", err);
+          console.error("Lỗi khi kéo dữ liệu:", err);
         }
-      }, 30000); 
+      }, 30000);
     }
   } catch (error) {
-    console.error(`Lỗi đồng bộ ${collectionName} lên Firebase:`, error);
+    console.error(`Lỗi đồng bộ ${collectionName}:`, error);
   }
 }
 
-// 2. Hàm lắng nghe thời gian thực
+// 2. Hàm xóa cực kỳ đơn giản vì `docId` bây giờ đã là ID chuẩn của Firebase
+export async function deleteFromCloud(collectionName: string, docId: string) {
+  try {
+    await deleteDoc(doc(db, collectionName, docId));
+    console.log(`Đã xóa thành công bản ghi ${docId} trên Firebase!`);
+  } catch (error) {
+    console.error(`Lỗi khi xóa bản ghi ${docId}:`, error);
+  }
+}
+
+// 3. Hàm lắng nghe thời gian thực cho mọi thiết bị (Laptop & Điện thoại)
 export function syncPullFromCloud(collectionName: string, onDataUpdate: (data: any[]) => void) {
   const q = query(collection(db, collectionName), orderBy("syncedAt", "desc"));
   return onSnapshot(q, (snapshot) => {
     const list: any[] = [];
     snapshot.forEach((doc) => {
+      // Đảm bảo lấy doc.id làm định danh chính xác tuyệt đối
       list.push({ id: doc.id, ...doc.data() });
     });
     onDataUpdate(list);
   });
-}
-
-export async function deleteFromCloud(collectionName: string, customId: string) {
-  try {
-    // 1. Truy vấn tìm document có trường `id` khớp với customId của bạn
-    const q = query(collection(db, collectionName), where("id", "==", customId));
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      console.warn(`Không tìm thấy bản ghi nào trên Firebase có id là: ${customId}`);
-      return;
-    }
-
-    // 2. Lặp qua các document tìm được (thường chỉ có 1) và lấy Document ID thật của Firebase để xóa
-    const deletePromises = snapshot.docs.map((documentSnap) => {
-      return deleteDoc(doc(db, collectionName, documentSnap.id));
-    });
-
-    await Promise.all(deletePromises);
-    console.log(`Đã xóa thành công bản ghi có customId ${customId} trên Firebase!`);
-  } catch (error) {
-    console.error(`Lỗi khi xóa bản ghi ${customId}:`, error);
-  }
 }
