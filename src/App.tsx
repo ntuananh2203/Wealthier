@@ -44,7 +44,6 @@ export default function App() {
   useEffect(() => {
     latestDataRef.current = data;
   }, [data]);
-  
   useEffect(() => {
     const unsubscribe = syncPullFromCloud("transactions", (cloudTransactions) => {
       setData((prev) => ({

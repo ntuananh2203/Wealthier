@@ -1,4 +1,4 @@
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs , where } from "firebase/firestore";
 import { db } from "../firebase";
 
 // 1. Đẩy lên mây và tự động gắn ID chuẩn của Firebase vào payload
@@ -35,12 +35,26 @@ export async function syncPushToCloud(collectionName: string, payload: any, onPu
 }
 
 // 2. Hàm xóa cực kỳ đơn giản vì `docId` bây giờ đã là ID chuẩn của Firebase
-export async function deleteFromCloud(collectionName: string, docId: string) {
+export async function deleteFromCloud(collectionName: string, targetId: string) {
   try {
-    await deleteDoc(doc(db, collectionName, docId));
-    console.log(`Đã xóa thành công bản ghi ${docId} trên Firebase!`);
+    // 1. Truy vấn tìm document trên Firestore có trường "id" trùng với targetId (ví dụ: tx-1718...)
+    const q = query(collection(db, collectionName), where("id", "==", targetId));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      console.warn(`Không tìm thấy bản ghi trên Firebase có id là: ${targetId}`);
+      return;
+    }
+
+    // 2. Lấy Document ID thật của Firebase để tiến hành xóa chuẩn xác
+    const deletePromises = snapshot.docs.map((documentSnap) => {
+      return deleteDoc(doc(db, collectionName, documentSnap.id));
+    });
+
+    await Promise.all(deletePromises);
+    console.log(`Đã xóa thành công bản ghi ${targetId} trên Firebase!`);
   } catch (error) {
-    console.error(`Lỗi khi xóa bản ghi ${docId}:`, error);
+    console.error(`Lỗi khi xóa bản ghi ${targetId}:`, error);
   }
 }
 
