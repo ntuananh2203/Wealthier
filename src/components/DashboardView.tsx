@@ -73,13 +73,20 @@ export function DashboardView({
   const [cashError, setCashError] = useState('');
 
   useEffect(() => {
+    // Lắng nghe dữ liệu thời gian thực từ Firestore collection "transactions"
     const unsubscribe = syncPullFromCloud("transactions", (cloudData) => {
-      // Gọi cập nhật lại dữ liệu giao dịch từ mây về app
-      // (Nếu component cha của bạn truyền hàm cập nhật, hoặc nếu bạn dùng trực tiếp state truyền vào)
-      if (data && typeof (data as any).setTransactions === 'function') {
-        (data as any).setTransactions(cloudData);
+      // Cập nhật lại mảng transactions trong object dữ liệu của app ngay khi có thay đổi trên mây
+      if (data) {
+        data.transactions = cloudData;
+        
+        // Nếu component cha có truyền hàm cập nhật state riêng thì gọi luôn ở đây (nếu có)
+        if (typeof (data as any).setTransactions === 'function') {
+          (data as any).setTransactions(cloudData);
+        }
       }
     });
+
+    // Dọn dẹp listener khi component unmount
     return () => unsubscribe();
   }, [data]);
 
